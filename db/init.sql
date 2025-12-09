@@ -149,7 +149,39 @@ CREATE TABLE cabine (
 COMMENT='Dispozitive: Cabine protecție catodică (1001-4999) și Module măsură (5001-8999)';
 
 -- ============================================
--- 7. PARAMETRI_MONITORIZATI - Date Telemetrie (Tabelul 1 - AMBELE TIPURI)
+-- 7. CABINA_MODULE_MASURA - Relație Părinte-Copil (Cabină → Module Măsură)
+-- ============================================
+-- O cabină (1001-4999) poate avea mai multe module măsură (5001-8999) asociate
+-- Relația se setează doar din modulul măsură (copil) către cabina părinte
+CREATE TABLE cabina_module_masura (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_cabina_parinte INT NOT NULL COMMENT 'ID cabină părinte (1001-4999)',
+    id_modul_masura INT NOT NULL COMMENT 'ID modul măsură copil (5001-8999)',
+    
+    -- Metadata
+    asignat_la TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    asignat_de INT NULL COMMENT 'ID utilizator care a făcut asocierea',
+    actualizat_la TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- Constraints
+    UNIQUE KEY unique_modul (id_modul_masura) COMMENT 'Un modul măsură poate avea doar o cabină părinte',
+    FOREIGN KEY (id_cabina_parinte) REFERENCES cabine(id_cabina) ON DELETE CASCADE,
+    FOREIGN KEY (id_modul_masura) REFERENCES cabine(id_cabina) ON DELETE CASCADE,
+    FOREIGN KEY (asignat_de) REFERENCES utilizatori(id) ON DELETE SET NULL,
+    
+    -- Indexes
+    INDEX idx_cabina_parinte (id_cabina_parinte),
+    INDEX idx_modul_masura (id_modul_masura),
+    INDEX idx_asignat_la (asignat_la),
+    
+    -- Validation constraint: ensure parent is CABINA and child is MODUL_MASURA
+    CONSTRAINT chk_parent_is_cabina CHECK (id_cabina_parinte BETWEEN 1001 AND 4999),
+    CONSTRAINT chk_child_is_modul CHECK (id_modul_masura BETWEEN 5001 AND 8999)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Relație părinte-copil: Cabină (părinte) → Module Măsură (copii)';
+
+-- ============================================
+-- 8. PARAMETRI_MONITORIZATI - Date Telemetrie (Tabelul 1 - AMBELE TIPURI)
 -- ============================================
 -- Tip Date 21: Date stocate (transmisie automată în mod PROGRAMAT)
 -- Tip Date 22: Date curente (transmisie continuă în mod CURENT)
@@ -175,19 +207,17 @@ CREATE TABLE parametri_monitorizati (
     pcon_ac_v DECIMAL(10, 4) COMMENT 'Potențial ON curent alternativ [V]',
     pcoff_v DECIMAL(10, 4) COMMENT 'Potențial OFF [V]',
     
-    -- Status și Configurare
-    injectie VARCHAR(20) COMMENT 'ON/OFF/CICLU',
+    -- Status și Configurare (integers: device protocol format)
+    injectie INT COMMENT '0=NONE, 1=NORMAL/ON, 2=OFF, 3=INTENSIVE',
     prescrisa_v DECIMAL(10, 4) COMMENT 'Prescrisa PC [V]',
-    mod_reglare VARCHAR(20) COMMENT 'PCon/PCoff',
-    mod_transmisie VARCHAR(20) COMMENT 'PROGRAMAT/CURENT',
-    usa VARCHAR(20) COMMENT 'Deschis/Închis',
+    mod_transmisie INT COMMENT '0=PROGRAMAT, 1=CURENT',
+    usa INT COMMENT '0=Închis, 1=Deschis',
     
     -- Sănătate Dispozitiv
-    tensiune_baterie_principala_v DECIMAL(5, 2) COMMENT 'Tensiune baterie principală (exterior) [V]',
-    tensiune_baterie_ceas_v DECIMAL(5, 2) COMMENT 'Tensiune baterie ceas (interior) [V]',
-    temperatura_c DECIMAL(5, 2) COMMENT 'Temperatură [°C]',
-    tensiune_retea_v DECIMAL(10, 4) COMMENT 'Tensiune rețea [V]',
-    status_modul VARCHAR(50) COMMENT 'Status modul',
+    tensiune_baterie DECIMAL(5, 2) COMMENT 'Tensiune baterie [V]',
+    temperatura DECIMAL(5, 2) COMMENT 'Temperatură [°C]',
+    tensiune_retea INT COMMENT 'Tensiune rețea: 0=lipsa, 1=prezent',
+    status_modul INT COMMENT 'Status modul: 0=OK, diferit de 0=eroare',
     putere_gsm_dbm DECIMAL(5, 2),
     putere_gps_dbm DECIMAL(5, 2),
     
@@ -209,7 +239,7 @@ CREATE TABLE parametri_monitorizati (
 COMMENT='Tabelul 1 - Parametri monitorizați (retenție 10 ani - SR 13392:2004)';
 
 -- ============================================
--- 8. DATE_CONFIGURARE_CABINE - Configurație Cabine (Tabelul 2 - Tip Date 31)
+-- 9. DATE_CONFIGURARE_CABINE - Configurație Cabine (Tabelul 2 - Tip Date 31)
 -- ============================================
 CREATE TABLE date_configurare_cabine (
     nr_crt INT AUTO_INCREMENT PRIMARY KEY,
@@ -219,7 +249,7 @@ CREATE TABLE date_configurare_cabine (
     tip_date INT DEFAULT 31,
     
     -- Configurare Injecție
-    tip_injectie VARCHAR(20) COMMENT 'ON/OFF/CICLU',
+    tip_injectie INT COMMENT '0=NONE, 1=NORMAL/ON, 2=OFF, 3=INTENSIVE',
     ora_start_masura_pcoff TIME,
     interval_masura_pcoff_h INT COMMENT 'Interval măsură PCoff [h]',
     durata_off_masura_pcoff_s INT COMMENT 'Durată OFF măsură PCoff [s]',
@@ -232,8 +262,7 @@ CREATE TABLE date_configurare_cabine (
     
     -- Reglare și Transmisie
     prescrisa_pc_v DECIMAL(10, 4) COMMENT 'Prescrisa PC [V]',
-    mod_reglare VARCHAR(20) COMMENT 'PCon/PCoff',
-    mod_transmisie VARCHAR(20) COMMENT 'PROGRAMAT/CURENT',
+    mod_transmisie INT COMMENT '0=PROGRAMAT, 1=CURENT',
     
     -- Date GPS
     longitudine DECIMAL(11, 8),
@@ -256,7 +285,7 @@ CREATE TABLE date_configurare_cabine (
 COMMENT='Tabelul 2 - Date configurare cabine';
 
 -- ============================================
--- 9. LIMITE_SEMNALIZARI - Limite și Semnalizări (Tabelul 3 - Tip Date 32)
+-- 10. LIMITE_SEMNALIZARI - Limite și Semnalizări (Tabelul 3 - Tip Date 32)
 -- ============================================
 CREATE TABLE limite_semnalizari (
     nr_crt INT AUTO_INCREMENT PRIMARY KEY,
@@ -285,17 +314,13 @@ CREATE TABLE limite_semnalizari (
     pcoff_l_v DECIMAL(10, 4) COMMENT 'Limită inferioară Pcoff [V]',
     
     -- Configurare
-    mod_reglare VARCHAR(20) COMMENT 'PCon/PCoff',
-    mod_transmisie VARCHAR(20) COMMENT 'PROGRAMAT/CURENT',
-    acces VARCHAR(20) DEFAULT 'PERMIS' COMMENT 'PERMIS/INTERZIS',
+    mod_transmisie INT COMMENT '0=PROGRAMAT, 1=CURENT',
+    acces INT DEFAULT 0 COMMENT '0=PERMIS, 1=INTERZIS',
     
     -- Limite Sănătate Dispozitiv
-    baterie_principala_l_v DECIMAL(5, 2) COMMENT 'Limită inferioară baterie principală [V]',
-    baterie_ceas_l_v DECIMAL(5, 2) COMMENT 'Limită inferioară baterie ceas [V]',
+    baterie_l_v DECIMAL(5, 2) COMMENT 'Limită inferioară baterie [V]',
     temperatura_h_c DECIMAL(5, 2) COMMENT 'Limită superioară temperatură [°C]',
     temperatura_l_c DECIMAL(5, 2) COMMENT 'Limită inferioară temperatură [°C]',
-    tensiune_retea_h_v DECIMAL(10, 4) COMMENT 'Limită superioară tensiune rețea [V]',
-    tensiune_retea_l_v DECIMAL(10, 4) COMMENT 'Limită inferioară tensiune rețea [V]',
     putere_gsm_l_dbm DECIMAL(5, 2) COMMENT 'Limită inferioară GSM [dBm]',
     putere_gps_l_dbm DECIMAL(5, 2) COMMENT 'Limită inferioară GPS [dBm]',
     
@@ -309,7 +334,7 @@ CREATE TABLE limite_semnalizari (
 COMMENT='Tabelul 3 - Limite și semnalizări (doar pe server, nu se transmit către cabine)';
 
 -- ============================================
--- 10. DATE_CONFIGURARE_MODULE_MASURA - Configurație Module Măsură (Tabelul 2 - Tip Date 31)
+-- 11. DATE_CONFIGURARE_MODULE_MASURA - Configurație Module Măsură (Tabelul 2 - Tip Date 31)
 -- ============================================
 -- Doar pentru module măsură (ID 5001-8999)
 CREATE TABLE date_configurare_module_masura (
@@ -344,7 +369,7 @@ CREATE TABLE date_configurare_module_masura (
 COMMENT='Tabelul 2 - Date configurare module măsură';
 
 -- ============================================
--- 11. LIMITE_SEMNALIZARI_MASURA - Limite Module Măsură (Tabelul 3 - Tip Date 32)
+-- 12. LIMITE_SEMNALIZARI_MASURA - Limite Module Măsură (Tabelul 3 - Tip Date 32)
 -- ============================================
 -- Doar pentru module măsură (ID 5001-8999)
 CREATE TABLE limite_semnalizari_masura (
@@ -363,16 +388,14 @@ CREATE TABLE limite_semnalizari_masura (
     pcoff_l_v DECIMAL(10, 4) COMMENT 'Limită inferioară Pcoff [V]',
     
     -- Configurare
-    acces VARCHAR(20) DEFAULT 'PERMIS' COMMENT 'PERMIS/INTERZIS',
+    acces INT DEFAULT 0 COMMENT '0=PERMIS, 1=INTERZIS',
     
     -- Limite Sănătate Dispozitiv
-    baterie_principala_l_v DECIMAL(5, 2) COMMENT 'Limită inferioară baterie principală [V]',
-    baterie_ceas_l_v DECIMAL(5, 2) COMMENT 'Limită inferioară baterie ceas [V]',
+    baterie_l_v DECIMAL(5, 2) COMMENT 'Limită inferioară baterie [V]',
     temperatura_h_c DECIMAL(5, 2) COMMENT 'Limită superioară temperatură [°C]',
     temperatura_l_c DECIMAL(5, 2) COMMENT 'Limită inferioară temperatură [°C]',
     putere_gsm_l_dbm DECIMAL(5, 2) COMMENT 'Limită inferioară GSM [dBm]',
     putere_gps_l_dbm DECIMAL(5, 2) COMMENT 'Limită inferioară GPS [dBm]',
-    status_modul_h INT COMMENT 'Limită superioară status modul (0=OK)',
     
     -- Timestamps
     actualizat_la TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -384,7 +407,7 @@ CREATE TABLE limite_semnalizari_masura (
 COMMENT='Tabelul 3 - Limite și semnalizări module măsură (doar pe server)';
 
 -- ============================================
--- 12. COMENZI - Comenzi Telecontrol
+-- 13. COMENZI - Comenzi Telecontrol
 -- ============================================
 CREATE TABLE comenzi (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -418,7 +441,7 @@ CREATE TABLE comenzi (
 COMMENT='Comenzi telecontrol trimise către cabine';
 
 -- ============================================
--- 13. ISTORIC_COMENZI - Istoric Comenzi
+-- 14. ISTORIC_COMENZI - Istoric Comenzi
 -- ============================================
 CREATE TABLE istoric_comenzi (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -620,7 +643,10 @@ INSERT INTO configurare_sistem (cheie_config, valoare_config, tip_date, descrier
 ('max_reincercari_comenzi', '3', 'INTEGER', 'Număr maxim reîncercări pentru comenzi eșuate'),
 ('timeout_sesiune_minute', '60', 'INTEGER', 'Timeout sesiune utilizator în minute'),
 ('versiune_platforma', '1.0.0', 'STRING', 'Versiune platformă'),
-('mod_mentenanta', 'false', 'BOOLEAN', 'Activare mod mentenanță');
+('mod_mentenanta', 'false', 'BOOLEAN', 'Activare mod mentenanță'),
+('pcoff_min_threshold_v', '-0.85', 'DECIMAL', 'PCoff minimum threshold [V] - if all modules below this, increase prescrisa'),
+('pcoff_max_threshold_v', '-0.75', 'DECIMAL', 'PCoff maximum threshold [V] - if all modules below this, increase prescrisa'),
+('pcoff_correction_gradient_v', '0.05', 'DECIMAL', 'Gradient for prescrisa correction [V] - amount to increase prescrisa by');
 
 -- ============================================
 -- DATE INIȚIALE - Utilizator Admin Implicit
@@ -634,7 +660,7 @@ INSERT INTO utilizatori (nume_utilizator, email, parola_hash, nume_complet, acti
 INSERT INTO utilizatori_roluri (utilizator_id, rol_id) VALUES (1, 1);
 
 -- ============================================
--- 15. SCADA_API_KEYS - API Keys pentru Integrare SCADA
+-- 19. SCADA_API_KEYS - API Keys pentru Integrare SCADA
 -- ============================================
 CREATE TABLE scada_api_keys (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

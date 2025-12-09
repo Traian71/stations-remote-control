@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Backend API Service
   backend:
-    image: spc-backend:latest
+    image: stationsremotecontrol-backend:latest
     container_name: spc-backend
     ports:
       - "${BACKEND_PORT:-8000}:8000"
@@ -56,7 +56,7 @@ services:
 
   # Gateway Service (TCP server for field devices)
   gateway:
-    image: spc-gateway:latest
+    image: stationsremotecontrol-gateway:latest
     container_name: spc-gateway
     ports:
       - "${GATEWAY_PORT:-8888}:8888"
@@ -76,7 +76,7 @@ services:
 
   # Frontend Service (Next.js)
   frontend:
-    image: spc-frontend:latest
+    image: stationsremotecontrol-frontend:latest
     container_name: spc-frontend
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
