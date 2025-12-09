@@ -263,6 +263,7 @@ CREATE TABLE date_configurare_cabine (
     -- Reglare și Transmisie
     prescrisa_pc_v DECIMAL(10, 4) COMMENT 'Prescrisa PC [V]',
     mod_transmisie INT COMMENT '0=PROGRAMAT, 1=CURENT',
+    tip_pc INT DEFAULT 0 COMMENT '0=PCoff (reglare automată activă), 1=PCon (fără reglare automată)',
     
     -- Date GPS
     longitudine DECIMAL(11, 8),
