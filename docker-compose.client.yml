@@ -6,7 +6,7 @@ services:
     image: stationsremotecontrol-backend:latest
     container_name: spc-backend
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "0.0.0.0:8000:8000"
     environment:
       # Application
       DEBUG: ${DEBUG:-True}
@@ -59,7 +59,7 @@ services:
     image: stationsremotecontrol-gateway:latest
     container_name: spc-gateway
     ports:
-      - "${GATEWAY_PORT:-8888}:8888"
+      - "0.0.0.0:8888:8888"
     environment:
       GATEWAY_HOST: 0.0.0.0
       GATEWAY_PORT: 8888
@@ -79,7 +79,7 @@ services:
     image: stationsremotecontrol-frontend:latest
     container_name: spc-frontend
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "0.0.0.0:3000:3000"
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}

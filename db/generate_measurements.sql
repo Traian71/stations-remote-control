@@ -66,7 +66,7 @@ BEGIN
                 INSERT INTO parametri_monitorizati (
                     traseu, locatie, id_cabina, tip_date, data, ora,
                     uinj_v, iinj_a, pcon_dc_v, pcon_ac_v, pcoff_v,
-                    injectie, prescrisa_v, mod_reglare, mod_transmisie, usa,
+                    injectie, prescrisa_v, mod_transmisie, usa,
                     tensiune_baterie,
                     temperatura, tensiune_retea, status_modul,
                     putere_gsm_dbm, putere_gps_dbm,
@@ -80,7 +80,6 @@ BEGIN
                     CASE WHEN v_zi % 7 = 0 THEN -0.920 + (RAND() * 0.05 - 0.025) ELSE NULL END,
                     1,
                     -0.850,
-                    0,
                     0,
                     0,
                     12.6 + (RAND() * 0.4),
@@ -103,7 +102,7 @@ BEGIN
                     INSERT INTO parametri_monitorizati (
                         traseu, locatie, id_cabina, tip_date, data, ora,
                         uinj_v, iinj_a, pcon_dc_v, pcon_ac_v, pcoff_v,
-                        injectie, prescrisa_v, mod_reglare, mod_transmisie, usa,
+                        injectie, prescrisa_v, mod_transmisie, usa,
                         tensiune_baterie,
                         temperatura, tensiune_retea, status_modul,
                         putere_gsm_dbm, putere_gps_dbm,
@@ -116,7 +115,6 @@ BEGIN
                         CASE WHEN v_ora % 6 = 0 THEN -0.920 + (RAND() * 0.05 - 0.025) ELSE NULL END,
                         0,  -- tip_injectie: 0=NONE (nu are injecție)
                         -0.850,
-                        0,  -- mod_reglare: 0=PCoff
                         0,  -- mod_transmisie: 0=PROGRAMAT
                         0,
                         12.6 + (RAND() * 0.4),
@@ -142,7 +140,7 @@ BEGIN
             INSERT INTO parametri_monitorizati (
                 traseu, locatie, id_cabina, tip_date, data, ora,
                 uinj_v, iinj_a, pcon_dc_v, pcon_ac_v, pcoff_v,
-                injectie, prescrisa_v, mod_reglare, mod_transmisie, usa,
+                injectie, prescrisa_v, mod_transmisie, usa,
                 tensiune_baterie,
                 temperatura, tensiune_retea, status_modul,
                 putere_gsm_dbm, putere_gps_dbm,
@@ -158,7 +156,6 @@ BEGIN
                 NULL,
                 1,
                 -0.850,
-                0,
                 0,
                 0,
                 12.6 + (RAND() * 0.4),
@@ -178,7 +175,7 @@ BEGIN
                 INSERT INTO parametri_monitorizati (
                     traseu, locatie, id_cabina, tip_date, data, ora,
                     uinj_v, iinj_a, pcon_dc_v, pcon_ac_v, pcoff_v,
-                    injectie, prescrisa_v, mod_reglare, mod_transmisie, usa,
+                    injectie, prescrisa_v, mod_transmisie, usa,
                     tensiune_baterie,
                     temperatura, tensiune_retea, status_modul,
                     putere_gsm_dbm, putere_gps_dbm,
@@ -193,7 +190,6 @@ BEGIN
                     CASE WHEN v_ora % 6 = 0 THEN -0.920 + (RAND() * 0.05 - 0.025) ELSE NULL END,
                     0,  -- tip_injectie: 0=NONE
                     -0.850,
-                    0,  -- mod_reglare: 0=PCoff
                     0,  -- mod_transmisie: 0=PROGRAMAT
                     0,
                     12.6 + (RAND() * 0.4),
@@ -263,7 +259,6 @@ SELECT
     pm.iinj_a,
     pm.pcon_dc_v,
     pm.pcon_ac_v,
-    pm.mod_reglare,
     pm.tensiune_baterie,
     pm.temperatura,
     pm.tensiune_retea,
